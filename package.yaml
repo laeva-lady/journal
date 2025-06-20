@@ -50,7 +50,7 @@ library:
   source-dirs: src
 
 executables:
-  journal-exe:
+  journal:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

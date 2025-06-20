@@ -63,7 +63,7 @@ drawUI s = [ui]
     -- FIX: Displaying the content of the file
     fileContent = s ^. textL
     file =
-      B.border $
+      B.borderWithLabel (str "File content") $
         hLimit 1000 $
           vLimit 1000 $
             str (T.unpack fileContent) -- Convert Text to String for 'str'
