@@ -3,13 +3,17 @@ module Sur
     startVIMquestionMark,
     getDate,
     date2string,
+    getListOfEntries,
   )
 where
 
+import           Control.Monad
 import           Data.Time
 import           Lib
+import           System.Directory
+import           System.FilePath
 import           System.Process
-import           Text.Printf    (printf)
+import           Text.Printf      (printf)
 import           Utils
 
 startVIMquestionMark :: String -> IO ()
@@ -31,7 +35,12 @@ getTodayEntry = do
   let entry = journalpath ++ date2string d ++ ".md"
   return entry
 
--- entry == journal file
--- get entry for current date
--- open it in vim
--- TUI to view all the entries
+getListOfEntries :: IO [FilePath]
+getListOfEntries = do
+  dir <- journalPath
+  contents <- listDirectory dir
+  filtered_contents <- filterM (doesFileExist . (dir </>)) contents
+
+  mapM (return . (dir </>)) filtered_contents
+
+

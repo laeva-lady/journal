@@ -27,6 +27,7 @@ library
   exposed-modules:
       Application
       Lib
+      Other
       Sur
       Utils
   other-modules:
@@ -43,8 +44,11 @@ library
     , filepath >=1.4
     , microlens >=0.4
     , microlens-mtl >=0.2
+    , microlens-th >=0.4
     , mtl >=2.3
     , process >=1.6
+    , random >=1.2
+    , text >=2.1
     , time >=1.12
     , vector >=0.13
     , vty >=6.2
@@ -67,8 +71,11 @@ executable journal-exe
     , journal
     , microlens >=0.4
     , microlens-mtl >=0.2
+    , microlens-th >=0.4
     , mtl >=2.3
     , process >=1.6
+    , random >=1.2
+    , text >=2.1
     , time >=1.12
     , vector >=0.13
     , vty >=6.2
@@ -92,8 +99,11 @@ test-suite journal-test
     , journal
     , microlens >=0.4
     , microlens-mtl >=0.2
+    , microlens-th >=0.4
     , mtl >=2.3
     , process >=1.6
+    , random >=1.2
+    , text >=2.1
     , time >=1.12
     , vector >=0.13
     , vty >=6.2

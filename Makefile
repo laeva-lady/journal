@@ -1,0 +1,3 @@
+r:
+	clear
+	stack run
