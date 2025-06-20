@@ -5,59 +5,68 @@
 
 module Other (startOthe) where
 
-import Control.Monad (void)
-import Lens.Micro (lens, (^.))
-import Lens.Micro.Mtl
+import           Control.Monad              (void)
+import           Lens.Micro                 (lens, (^.))
+import           Lens.Micro.Mtl             (use, zoom, (.=))
 #if !(MIN_VERSION_base(4,11,0))
 import           Data.Monoid
 #endif
-import qualified Brick.AttrMap as A
-import qualified Brick.Main as M
-import Brick.Types (Widget)
-import qualified Brick.Types as T
-import Brick.Util (fg, on)
-import Brick.Widgets.Border (border)
-import qualified Brick.Widgets.Border as B
-import Brick.Widgets.Border.Style
-import qualified Brick.Widgets.Center as C
-import Brick.Widgets.Core
-  ( hBox,
-    hLimit,
-    joinBorders,
-    str,
-    vBox,
-    vLimit,
-    withAttr,
-    withBorderStyle,
-    (<+>),
-  )
-import qualified Brick.Widgets.List as L
-import Data.Text as T
-import Data.Text.IO as TIO
-import qualified Data.Vector as Vec
-import qualified Graphics.Vty as V
-import Sur (getListOfEntries, startVIMquestionMark)
+import qualified Brick.AttrMap              as A
+import qualified Brick.Main                 as M
+import           Brick.Types                (Widget)
+import qualified Brick.Types                as T
+import           Brick.Util                 (on)
+import           Brick.Widgets.Border       (border)
+import qualified Brick.Widgets.Border       as B
+import           Brick.Widgets.Border.Style
+import qualified Brick.Widgets.Center       as C
+import           Brick.Widgets.Core         (hBox, hLimit, joinBorders, str, vBox, vLimit, withAttr, withBorderStyle,
+                                             (<+>))
+import qualified Brick.Widgets.List         as L
+import           Control.Monad.IO.Class
+import           Data.Text                  as T
+import           Data.Text.IO               as TIO
+import qualified Data.Vector                as Vec
+import qualified Graphics.Vty               as V
+import           Lens.Micro.Type
+import           Sur                        (getListOfEntries, startVIMquestionMark)
+
+-- State definition
+data State = State
+  { _list :: L.List () String,
+    _text :: T.Text
+  }
+
+-- Lenses for easier state access (optional but good practice with lens)
+listL :: Lens' State (L.List () String)
+listL = lens _list (\s x -> s {_list = x})
+
+textL :: Lens' State T.Text
+textL = lens _text (\s x -> s {_text = x})
 
 drawUI :: State -> [Widget ()]
-drawUI l = [ui]
+drawUI s = [ui]
   where
     label = str "Item " <+> cur <+> str " of " <+> total
-    cur = case _list l ^. L.listSelectedL of
+    cur = case s ^. listL . L.listSelectedL of
       Nothing -> str "-"
-      Just i -> str (show (i + 1))
-    total = str $ show $ Vec.length $ _list l ^. L.listElementsL
+      Just i  -> str (show (i + 1))
+    total = str $ show $ Vec.length $ s ^. listL . L.listElementsL
+
     box =
       B.borderWithLabel label $
-        hLimit 100 $
+        hLimit 50 $
           vLimit 1000 $
             L.renderList listDrawElement True $
-              _list l
-    file =
-        B.border $
-          hLimit 100 $
-            vLimit 1000 $
-                str $ show $ Vec.length $ _list l ^. L.listElementsL
+              s ^. listL
 
+    -- FIX: Displaying the content of the file
+    fileContent = s ^. textL
+    file =
+      B.border $
+        hLimit 1000 $
+          vLimit 1000 $
+            str (T.unpack fileContent) -- Convert Text to String for 'str'
     ui =
       joinBorders $
         withBorderStyle unicode $
@@ -75,34 +84,35 @@ appEvent (T.VtyEvent e) =
   case e of
     V.EvKey V.KEsc [] -> M.halt
     V.EvKey V.KEnter [] -> do
-      selected <- use (lens _list (\s l -> s {_list = l}) . L.listSelectedL)
-      case selected of
+      selectedIdx <- use (listL . L.listSelectedL)
+      case selectedIdx of
         Nothing -> return ()
         Just i -> do
           handler i
     V.EvKey (V.KChar 'q') [] -> M.halt
-    ev -> zoom (lens _list (\s l -> s {_list = l})) (L.handleListEvent ev)
+    ev -> zoom listL (L.handleListEvent ev)
   where
     handler :: Int -> T.EventM () State ()
-    handler selected =
-      case selected of
-        0 -> M.halt
-        sel ->
-          M.suspendAndResume $ do
-            entries <- getListOfEntries
-            let selection = Vec.fromList entries Vec.! sel
-            startVIMquestionMark selection
-            contents <- TIO.readFile selection
-            return $ State (L.list () (Vec.fromList entries) 1) contents
+    handler selected = do
+      entries <- liftIO getListOfEntries -- Use liftIO because getListOfEntries is an IO action
+      case Vec.fromList entries Vec.! selected of
+        selectedFilePath
+          | selected == 0 -> M.halt -- Assuming 0 means exit/halt based on your original code
+          | otherwise -> do
+              -- FIX: Call external editor and then update the state with new content
+              liftIO $ startVIMquestionMark selectedFilePath
+              newContents <- liftIO $ TIO.readFile selectedFilePath
+              textL .= newContents -- Update the _text field in State
+              -- If you want to refresh the list, you might need to rebuild it or handle it differently
+              -- For now, we only update the text.
 appEvent _ = return ()
 
 listDrawElement :: (Show a) => Bool -> a -> Widget ()
 listDrawElement sel a =
   let selStr s =
-        let item = "[  " <> s <> "  ]"
-         in if sel
-              then withAttr customAttr (str $ "> " <> item)
-              else str $ "  " <> item
+        if sel
+          then withAttr customAttr (str $ "> " <> s)
+          else str $ "  " <> s
    in C.hCenter $ selStr (show a)
 
 customAttr :: A.AttrName
@@ -114,7 +124,6 @@ theMap =
     V.defAttr
     [ (L.listAttr, V.white `on` V.black),
       (L.listSelectedAttr, V.black `on` V.black),
-      (customAttr, fg V.cyan),
       (customAttr, V.red `on` V.black) -- custom color
     ]
 
@@ -128,14 +137,13 @@ theApp =
       M.appAttrMap = const theMap
     }
 
-data State = State
-  { _list :: L.List () String,
-    _text :: T.Text
-  }
-
 startOthe :: IO ()
 startOthe = do
   entries <- getListOfEntries
-  contents <- TIO.readFile $ Vec.fromList entries Vec.! 1
-  let state = State (L.list () (Vec.fromList entries) 1) contents
-  void $ M.defaultMain theApp state
+  -- Ensure there's at least one entry before trying to read it
+  initialContents <-
+    if Vec.null (Vec.fromList entries)
+      then return T.empty
+      else TIO.readFile $ Vec.fromList entries Vec.! 0 -- Start with the first entry (index 0)
+  let initialState = State (L.list () (Vec.fromList entries) 1) initialContents -- Keep your list focus
+  void $ M.defaultMain theApp initialState
