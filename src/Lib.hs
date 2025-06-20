@@ -3,8 +3,8 @@ module Lib
   )
 where
 
-import System.Directory
-import System.Environment (getEnv)
+import           System.Directory
+import           System.Environment (getEnv)
 
 journalPath :: IO FilePath
 journalPath = do

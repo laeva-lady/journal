@@ -5,27 +5,25 @@
 
 module Application (startTheApp) where
 
-import Control.Monad (void)
-import Lens.Micro ((^.))
-import Lens.Micro.Mtl
+import           Control.Monad              (void)
+import           Lens.Micro                 ((^.))
+import           Lens.Micro.Mtl
 #if !(MIN_VERSION_base(4,11,0))
 import           Data.Monoid
 #endif
-import qualified Brick.AttrMap as A
-import qualified Brick.Main as M
-import Brick.Types (Widget)
-import qualified Brick.Types as T
-import Brick.Util (fg, on)
-import Brick.Widgets.Border (border)
-import qualified Brick.Widgets.Border as B
-import Brick.Widgets.Border.Style
-import qualified Brick.Widgets.Center as C
-import Brick.Widgets.Core (hBox, hLimit, str, vBox, vLimit, withAttr, withBorderStyle, (<+>))
-import qualified Brick.Widgets.List as L
-import qualified Data.Vector as Vec
-import qualified Graphics.Vty as V
-import Other (startOthe)
-import Sur (getTodayEntry, startVIMquestionMark)
+import           Brick
+import qualified Brick.AttrMap              as A
+import qualified Brick.Main                 as M
+import qualified Brick.Types                as T
+import           Brick.Widgets.Border       (border)
+import qualified Brick.Widgets.Border       as B
+import           Brick.Widgets.Border.Style
+import qualified Brick.Widgets.Center       as C
+import qualified Brick.Widgets.List         as L
+import qualified Data.Vector                as Vec
+import qualified Graphics.Vty               as V
+import           Other                      (startOthe)
+import           Sur                        (getTodayEntry, startVIMquestionMark)
 
 drawUI :: (Show a) => L.List () a -> [Widget ()]
 drawUI l = [ui]
@@ -33,7 +31,7 @@ drawUI l = [ui]
     label = str "Item " <+> cur <+> str " of " <+> total
     cur = case l ^. L.listSelectedL of
       Nothing -> str "-"
-      Just i -> str (show (i + 1))
+      Just i  -> str (show (i + 1))
     total = str $ show $ Vec.length $ l ^. L.listElementsL
     box =
       B.borderWithLabel label $
@@ -81,9 +79,6 @@ appEvent (T.VtyEvent e) =
     handleOther = do
       startOthe
       return ()
-
--- nextElement :: Vec.Vector String -> String
--- nextElement v = fromMaybe "?" $ Vec.find (`Vec.notElem` v) (Vec.fromList (map (: []) ['a' .. 'z']))
 appEvent _ = return ()
 
 listDrawElement :: (Show a) => Bool -> a -> Widget ()
@@ -91,12 +86,12 @@ listDrawElement sel a =
   let selStr s =
         let item = "[  " <> s <> "  ]"
          in if sel
-              then withAttr customAttr (str $ "> " <> item)
-              else str $ "  " <> item
+              then withAttr customAttr (str item)
+              else str item
    in C.hCenter $ selStr (show a)
 
 initialState :: L.List () String
-initialState = L.list () (Vec.fromList ["Open Current Day", "Select Other days", "Quit"]) 1
+initialState = L.list () (Vec.fromList ["Select today", "Select Other days", "Quit"]) 1
 
 customAttr :: A.AttrName
 customAttr = L.listSelectedAttr <> A.attrName "custom"
