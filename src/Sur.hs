@@ -6,11 +6,11 @@ module Sur
   )
 where
 
-import Data.Time
-import Lib
-import System.Process
-import Text.Printf (printf)
-import Utils
+import           Data.Time
+import           Lib
+import           System.Process
+import           Text.Printf    (printf)
+import           Utils
 
 startVIMquestionMark :: String -> IO ()
 startVIMquestionMark file = do
