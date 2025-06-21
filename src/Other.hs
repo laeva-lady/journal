@@ -5,41 +5,32 @@
 
 module Other (startOthe) where
 
-import Control.Monad (void)
-import Lens.Micro (lens, (^.))
-import Lens.Micro.Mtl (use, zoom, (.=))
+import           Control.Monad              (void)
+import           Lens.Micro                 (lens, (^.))
+import           Lens.Micro.Mtl             (use, zoom, (.=))
 #if !(MIN_VERSION_base(4,11,0))
 import           Data.Monoid
 #endif
-import qualified Brick.AttrMap as A
-import qualified Brick.Main as M
-import Brick.Types (Widget)
-import qualified Brick.Types as T
-import Brick.Util (on)
-import Brick.Widgets.Border (border)
-import qualified Brick.Widgets.Border as B
-import Brick.Widgets.Border.Style
-import qualified Brick.Widgets.Center as C
-import Brick.Widgets.Core
-  ( hBox,
-    hLimit,
-    joinBorders,
-    str,
-    vBox,
-    vLimit,
-    withAttr,
-    withBorderStyle,
-    (<+>),
-  )
-import qualified Brick.Widgets.List as L
-import Control.Monad.IO.Class
-import Data.Maybe
-import Data.Text as T
-import Data.Text.IO as TIO
-import qualified Data.Vector as Vec
-import qualified Graphics.Vty as V
-import Lens.Micro.Type
-import Sur (getListOfEntries, startVIMquestionMark)
+import qualified Brick.AttrMap              as A
+import qualified Brick.Main                 as M
+import           Brick.Types                (Widget)
+import qualified Brick.Types                as T
+import           Brick.Util                 (on)
+import           Brick.Widgets.Border       (border)
+import qualified Brick.Widgets.Border       as B
+import           Brick.Widgets.Border.Style
+import qualified Brick.Widgets.Center       as C
+import           Brick.Widgets.Core         (hBox, hLimit, joinBorders, str, vBox, vLimit, withAttr, withBorderStyle,
+                                             (<+>))
+import qualified Brick.Widgets.List         as L
+import           Control.Monad.IO.Class
+import           Data.Maybe
+import           Data.Text                  as T
+import           Data.Text.IO               as TIO
+import qualified Data.Vector                as Vec
+import qualified Graphics.Vty               as V
+import           Lens.Micro.Type
+import           Sur                        (getListOfEntries, startVIMquestionMark)
 
 -- State definition
 data State = State
@@ -60,7 +51,7 @@ drawUI s = [ui]
     label = str "Item " <+> cur <+> str " of " <+> total
     cur = case s ^. listL . L.listSelectedL of
       Nothing -> str "-"
-      Just i -> str (show (i + 1))
+      Just i  -> str (show (i + 1))
     total = str $ show $ Vec.length $ s ^. listL . L.listElementsL
 
     box =
@@ -76,7 +67,7 @@ drawUI s = [ui]
       B.borderWithLabel (str "File content") $
         hLimit 1000 $
           vLimit 1000 $
-            str (T.unpack fileContent) -- Convert Text to String for 'str'
+            str (T.unpack fileContent)
     ui =
       joinBorders $
         withBorderStyle unicode $
@@ -110,7 +101,7 @@ appEvent (T.VtyEvent e) =
         let newState = State (L.list () (Vec.fromList entries') 1) initialContents
         return newState
     V.EvKey (V.KChar 'q') [] -> M.halt
-    ev -> zoom listL (L.handleListEvent ev)
+    ev -> zoom listL $ L.handleListEvent ev
 appEvent _ = return ()
 
 listDrawElement :: (Show a) => Bool -> a -> Widget ()
