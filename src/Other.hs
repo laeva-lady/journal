@@ -5,31 +5,41 @@
 
 module Other (startOthe) where
 
-import           Control.Monad              (void)
-import           Lens.Micro                 (lens, (^.))
-import           Lens.Micro.Mtl             (use, zoom, (.=))
+import Control.Monad (void)
+import Lens.Micro (lens, (^.))
+import Lens.Micro.Mtl (use, zoom, (.=))
 #if !(MIN_VERSION_base(4,11,0))
 import           Data.Monoid
 #endif
-import qualified Brick.AttrMap              as A
-import qualified Brick.Main                 as M
-import           Brick.Types                (Widget)
-import qualified Brick.Types                as T
-import           Brick.Util                 (on)
-import           Brick.Widgets.Border       (border)
-import qualified Brick.Widgets.Border       as B
-import           Brick.Widgets.Border.Style
-import qualified Brick.Widgets.Center       as C
-import           Brick.Widgets.Core         (hBox, hLimit, joinBorders, str, vBox, vLimit, withAttr, withBorderStyle,
-                                             (<+>))
-import qualified Brick.Widgets.List         as L
-import           Control.Monad.IO.Class
-import           Data.Text                  as T
-import           Data.Text.IO               as TIO
-import qualified Data.Vector                as Vec
-import qualified Graphics.Vty               as V
-import           Lens.Micro.Type
-import           Sur                        (getListOfEntries, startVIMquestionMark)
+import qualified Brick.AttrMap as A
+import qualified Brick.Main as M
+import Brick.Types (Widget)
+import qualified Brick.Types as T
+import Brick.Util (on)
+import Brick.Widgets.Border (border)
+import qualified Brick.Widgets.Border as B
+import Brick.Widgets.Border.Style
+import qualified Brick.Widgets.Center as C
+import Brick.Widgets.Core
+  ( hBox,
+    hLimit,
+    joinBorders,
+    str,
+    vBox,
+    vLimit,
+    withAttr,
+    withBorderStyle,
+    (<+>),
+  )
+import qualified Brick.Widgets.List as L
+import Control.Monad.IO.Class
+import Data.Maybe
+import Data.Text as T
+import Data.Text.IO as TIO
+import qualified Data.Vector as Vec
+import qualified Graphics.Vty as V
+import Lens.Micro.Type
+import Sur (getListOfEntries, startVIMquestionMark)
 
 -- State definition
 data State = State
@@ -50,7 +60,7 @@ drawUI s = [ui]
     label = str "Item " <+> cur <+> str " of " <+> total
     cur = case s ^. listL . L.listSelectedL of
       Nothing -> str "-"
-      Just i  -> str (show (i + 1))
+      Just i -> str (show (i + 1))
     total = str $ show $ Vec.length $ s ^. listL . L.listElementsL
 
     box =
@@ -85,26 +95,22 @@ appEvent (T.VtyEvent e) =
     V.EvKey V.KEsc [] -> M.halt
     V.EvKey V.KEnter [] -> do
       selectedIdx <- use (listL . L.listSelectedL)
-      case selectedIdx of
-        Nothing -> return ()
-        Just i -> do
-          handler i
+      M.suspendAndResume $ do
+        entries <- liftIO getListOfEntries
+        case selectedIdx of
+          Nothing -> return ()
+          Just idx -> do
+            let arts = Vec.fromList entries Vec.! idx
+            liftIO $ startVIMquestionMark arts
+        entries' <- getListOfEntries
+        initialContents <-
+          if Vec.null (Vec.fromList entries)
+            then return T.empty
+            else TIO.readFile $ Vec.fromList entries' Vec.! 0
+        let newState = State (L.list () (Vec.fromList entries') 1) initialContents
+        return newState
     V.EvKey (V.KChar 'q') [] -> M.halt
     ev -> zoom listL (L.handleListEvent ev)
-  where
-    handler :: Int -> T.EventM () State ()
-    handler selected = do
-      entries <- liftIO getListOfEntries -- Use liftIO because getListOfEntries is an IO action
-      case Vec.fromList entries Vec.! selected of
-        selectedFilePath
-          | selected == 0 -> M.halt -- Assuming 0 means exit/halt based on your original code
-          | otherwise -> do
-              -- FIX: Call external editor and then update the state with new content
-              liftIO $ startVIMquestionMark selectedFilePath
-              newContents <- liftIO $ TIO.readFile selectedFilePath
-              textL .= newContents -- Update the _text field in State
-              -- If you want to refresh the list, you might need to rebuild it or handle it differently
-              -- For now, we only update the text.
 appEvent _ = return ()
 
 listDrawElement :: (Show a) => Bool -> a -> Widget ()
