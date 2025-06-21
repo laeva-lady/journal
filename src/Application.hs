@@ -15,9 +15,7 @@ import Brick
 import qualified Brick.AttrMap as A
 import qualified Brick.Main as M
 import qualified Brick.Types as T
-import Brick.Widgets.Border (border)
 import qualified Brick.Widgets.Border as B
-import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Center as C
 import qualified Brick.Widgets.List as L
 import Data.Text as TT
@@ -51,23 +49,14 @@ drawUI l = [ui]
 
     fileContent = l ^. textL
     file =
-      B.borderWithLabel (str "Content") $
-        hLimit 50 $
-          vLimit 50 $
-            str (TT.unpack fileContent)
+      hLimit 500 $
+        str (TT.unpack $ TT.take 1000 fileContent)
     ui =
-      joinBorders $
-        withBorderStyle unicode $
-          border $
-            hBox
-              [ C.vCenter $
-                  C.hCenter $
-                    vBox
-                      [C.hCenter box],
-                C.center $
-                  vBox
-                    [C.hCenter file]
-              ]
+        hBox
+          [ C.vCenter box,
+            B.vBorder,
+            C.hCenter file
+          ]
 
 appEvent :: T.BrickEvent () e -> T.EventM () State ()
 appEvent (T.VtyEvent e) =
