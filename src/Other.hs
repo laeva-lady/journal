@@ -5,9 +5,9 @@
 
 module Other (startOthe) where
 
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Lens.Micro (lens, (^.))
-import Lens.Micro.Mtl (use, zoom)
+import Lens.Micro.Mtl (use, zoom, (.=))
 #if !(MIN_VERSION_base(4,11,0))
 import           Data.Monoid
 #endif
@@ -90,7 +90,18 @@ appEvent (T.VtyEvent e) =
         let newState = State (L.list () (Vec.fromList entries') 1) initialContents
         return newState
     V.EvKey (V.KChar 'q') [] -> M.halt
-    ev -> zoom listL $ L.handleListEvent ev
+    ev -> do
+      zoom listL $ L.handleListEvent ev
+      mSel <- use (listL . L.listSelectedL)
+      elements <- use (listL . L.listElementsL)
+      case mSel of
+        Just i ->
+          when (i < Vec.length elements) $
+            do
+              let path = elements Vec.! i
+              content <- liftIO $ TIO.readFile path
+              textL .= content
+        _ -> return ()
 appEvent _ = return ()
 
 listDrawElement :: (Show a) => Bool -> a -> Widget ()

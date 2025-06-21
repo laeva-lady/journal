@@ -28,11 +28,19 @@ getDate = do
 date2string :: Date -> String
 date2string (y, m, d) = Utils.unwords '-' [show y, printf "%02d" m, printf "%02d" d]
 
+createIfMissing :: FilePath -> String -> IO ()
+createIfMissing path contents = do
+    exists <- doesFileExist path
+    unless exists $ appendFile path contents
+
+
+
 getTodayEntry :: IO FilePath
 getTodayEntry = do
   d <- getDate
   journalpath <- journalPath
   let entry = journalpath ++ date2string d ++ ".md"
+  createIfMissing entry ""
   return entry
 
 getListOfEntries :: IO [FilePath]
