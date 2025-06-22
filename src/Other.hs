@@ -61,7 +61,7 @@ drawUI s = [ui]
     file =
       hLimit 1000 $
         vLimit 1000 $
-          str (T.unpack fileContent)
+          str $ T.unpack fileContent
     ui =
       hBox
         [ C.vCenter box,

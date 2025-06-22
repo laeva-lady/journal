@@ -51,7 +51,7 @@ drawUI l = [ui]
     fileContent = l ^. textL
     file =
       hLimit 500 $
-        str (TT.unpack $ TT.take 1000 fileContent)
+        str $ TT.unpack fileContent
     ui =
       hBox
         [ C.vCenter box,
@@ -70,31 +70,22 @@ appEvent (T.VtyEvent e) =
         Just i -> do
           case i of
             0 -> do
-              M.suspendAndResume $ do
-                handleToday
-                entries <- getTodayEntry
-                initialContents <- TTIO.readFile entries
-                let initialState = State (L.list () (Vec.fromList ["Select today", "Select Other days", "Quit"]) 1) initialContents
-                return initialState
+              handler $ getTodayEntry >>= startVIMquestionMark
             1 -> do
-              M.suspendAndResume $ do
-                handleOther
-                entries <- getTodayEntry
-                initialContents <- TTIO.readFile entries
-                let initialState = State (L.list () (Vec.fromList ["Select today", "Select Other days", "Quit"]) 1) initialContents
-                return initialState
+              handler startOthe
             2 -> M.halt
             _ -> return ()
     V.EvKey (V.KChar 'q') [] -> M.halt
     ev -> zoom listL $ L.handleListEvent ev
   where
-    handleToday :: IO ()
-    handleToday = getTodayEntry >>= startVIMquestionMark
-
-    handleOther :: IO ()
-    handleOther = do
-      startOthe
-      return ()
+    handler :: IO () -> T.EventM () State ()
+    handler hand =
+              M.suspendAndResume $ do
+                hand
+                entries <- getTodayEntry
+                initialContents <- TTIO.readFile entries
+                let initialState = State (L.list () (Vec.fromList ["Select today", "Select Other days", "Quit"]) 1) initialContents
+                return initialState
 appEvent _ = return ()
 
 listDrawElement :: (Show a) => Bool -> a -> Widget ()
