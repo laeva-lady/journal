@@ -5,28 +5,28 @@
 
 module Other (startOthe) where
 
-import Control.Monad (void, when)
-import Lens.Micro (lens, (^.))
-import Lens.Micro.Mtl (use, zoom, (.=))
+import           Control.Monad          (void, when)
+import           Lens.Micro             (lens, (^.))
+import           Lens.Micro.Mtl         (use, zoom, (.=))
 #if !(MIN_VERSION_base(4,11,0))
 import           Data.Monoid
 #endif
-import qualified Brick.AttrMap as A
-import qualified Brick.Main as M
-import Brick.Types (Widget)
-import qualified Brick.Types as T
-import Brick.Util (on)
-import qualified Brick.Widgets.Border as B
-import qualified Brick.Widgets.Center as C
-import Brick.Widgets.Core
-import qualified Brick.Widgets.List as L
-import Control.Monad.IO.Class
-import Data.Text as T
-import Data.Text.IO as TIO
-import qualified Data.Vector as Vec
-import qualified Graphics.Vty as V
-import Lens.Micro.Type
-import Sur (getListOfEntries, startVIMquestionMark)
+import qualified Brick.AttrMap          as A
+import qualified Brick.Main             as M
+import           Brick.Types            (Widget)
+import qualified Brick.Types            as T
+import           Brick.Util             (on)
+import qualified Brick.Widgets.Border   as B
+import qualified Brick.Widgets.Center   as C
+import           Brick.Widgets.Core
+import qualified Brick.Widgets.List     as L
+import           Control.Monad.IO.Class
+import           Data.Text              as T
+import           Data.Text.IO           as TIO
+import qualified Data.Vector            as Vec
+import qualified Graphics.Vty           as V
+import           Lens.Micro.Type
+import           Sur                    (getListOfEntries, startVIMquestionMark)
 
 -- State definition
 data State = State
@@ -47,7 +47,7 @@ drawUI s = [ui]
     label = str "Item " <+> cur <+> str " of " <+> total
     cur = case s ^. listL . L.listSelectedL of
       Nothing -> str "-"
-      Just i -> str (show (i + 1))
+      Just i  -> str (show (i + 1))
     total = str $ show $ Vec.length $ s ^. listL . L.listElementsL
 
     box =

@@ -1,30 +1,31 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP   #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Used otherwise as a pattern" #-}
+{-# LANGUAGE GADTs #-}
 
 module Application (startTheApp) where
 
-import Control.Monad (void)
-import Lens.Micro (lens, (^.))
-import Lens.Micro.Mtl
+import           Control.Monad        (void)
+import           Lens.Micro           (lens, (^.))
+import           Lens.Micro.Mtl
 #if !(MIN_VERSION_base(4,11,0))
 import           Data.Monoid
 #endif
-import Brick
-import qualified Brick.AttrMap as A
-import qualified Brick.Main as M
-import qualified Brick.Types as T
+import           Brick
+import qualified Brick.AttrMap        as A
+import qualified Brick.Main           as M
+import qualified Brick.Types          as T
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
-import qualified Brick.Widgets.List as L
-import Data.Text as TT
-import Data.Text.IO as TTIO
-import qualified Data.Vector as Vec
-import qualified Graphics.Vty as V
-import Lens.Micro.Type
-import Other (startOthe)
-import Sur (getTodayEntry, startVIMquestionMark)
+import qualified Brick.Widgets.List   as L
+import           Data.Text            as TT
+import           Data.Text.IO         as TTIO
+import qualified Data.Vector          as Vec
+import qualified Graphics.Vty         as V
+import           Lens.Micro.Type
+import           Other                (startOthe)
+import           Sur                  (getTodayEntry, startVIMquestionMark)
 
 listL :: Lens' State (L.List () String)
 listL = lens _list (\s x -> s {_list = x})
@@ -38,7 +39,7 @@ drawUI l = [ui]
     label = str "Item " <+> cur <+> str " of " <+> total
     cur = case l ^. listL . L.listSelectedL of
       Nothing -> str "-"
-      Just i -> str (show (i + 1))
+      Just i  -> str (show (i + 1))
     total = str $ show $ Vec.length $ l ^. listL . L.listElementsL
     box =
       B.borderWithLabel label $
@@ -52,11 +53,11 @@ drawUI l = [ui]
       hLimit 500 $
         str (TT.unpack $ TT.take 1000 fileContent)
     ui =
-        hBox
-          [ C.vCenter box,
-            B.vBorder,
-            C.hCenter file
-          ]
+      hBox
+        [ C.vCenter box,
+          B.vBorder,
+          C.hCenter file
+        ]
 
 appEvent :: T.BrickEvent () e -> T.EventM () State ()
 appEvent (T.VtyEvent e) =
@@ -128,10 +129,8 @@ theApp =
       M.appAttrMap = const theMap
     }
 
-data State = State
-  { _list :: L.List () String,
-    _text :: TT.Text
-  }
+data State where
+  State :: {_list :: L.List () String, _text :: TT.Text} -> State
   deriving (Show)
 
 startTheApp :: IO ()
