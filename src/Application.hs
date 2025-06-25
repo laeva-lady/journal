@@ -52,11 +52,12 @@ drawUI l = [ui]
     file =
       hLimit 500 $
         str $ TT.unpack fileContent
+
     ui =
       hBox
         [ C.vCenter box,
           B.vBorder,
-          C.hCenter file
+          file
         ]
 
 appEvent :: T.BrickEvent () e -> T.EventM () State ()

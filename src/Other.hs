@@ -21,13 +21,14 @@ import qualified Brick.Widgets.Center   as C
 import           Brick.Widgets.Core
 import qualified Brick.Widgets.List     as L
 import           Control.Monad.IO.Class
+import           Data.List              (sortBy)
+import           Data.Ord
 import           Data.Text              as T
 import           Data.Text.IO           as TIO
 import qualified Data.Vector            as Vec
 import qualified Graphics.Vty           as V
 import           Lens.Micro.Type
 import           Sur                    (getListOfEntries, startVIMquestionMark)
-import Data.List
 
 -- State definition
 data State = State
@@ -67,7 +68,7 @@ drawUI s = [ui]
       hBox
         [ C.vCenter box,
           B.vBorder,
-          C.hCenter file
+          file
         ]
 
 appEvent :: T.BrickEvent () e -> T.EventM () State ()
@@ -81,14 +82,14 @@ appEvent (T.VtyEvent e) =
         case selectedIdx of
           Nothing -> return ()
           Just idx -> do
-            let arts = Vec.fromList (sort entries) Vec.! idx
+            let arts = Vec.fromList (sortBy (comparing Data.Ord.Down) entries) Vec.! idx
             liftIO $ startVIMquestionMark arts
         entries' <- getListOfEntries
         initialContents <-
           if Vec.null (Vec.fromList entries)
             then return T.empty
             else TIO.readFile $ Vec.fromList entries' Vec.! 0
-        let newState = State (L.list () (Vec.fromList $ sort entries') 1) initialContents
+        let newState = State (L.list () (Vec.fromList $ sortBy (comparing Data.Ord.Down) entries') 1) initialContents
         return newState
     V.EvKey (V.KChar 'q') [] -> M.halt
     ev -> do
@@ -143,5 +144,5 @@ startOthe = do
     if Vec.null (Vec.fromList entries)
       then return T.empty
       else TIO.readFile $ Vec.fromList entries Vec.! 0 -- Start with the first entry (index 0)
-  let initialState = State (L.list () (Vec.fromList $ sort entries) 1) initialContents -- Keep your list focus
+  let initialState = State (L.list () (Vec.fromList $ sortBy (comparing Data.Ord.Down) entries) 1) initialContents -- Keep your list focus
   void $ M.defaultMain theApp initialState
